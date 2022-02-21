@@ -6,6 +6,9 @@ const useStyles = makeStyles(theme => ({
   root: {
     backgroundColor: theme.palette.secondary.main,
     minHeight: '100vh',
+    minWidth: '100vw',
+    margin: 0,
+    padding: 0,
   },  
   title: {
     fontWeight: '500',
@@ -14,6 +17,7 @@ const useStyles = makeStyles(theme => ({
     padding: '13% 0 0 0',
     fontFamily: theme.typography.fontFamily.primary,
     fontWeight: '600',
+    maxWidth: '70%',
   },
   innerTitle: {
     color: theme.palette.secondary.contrastText,
@@ -23,7 +27,8 @@ const useStyles = makeStyles(theme => ({
     fontFamily: theme.typography.fontFamily.secondary,
     color: theme.palette.secondary.light,
     fontSize: '1.2rem',
-    margin: '1rem 0 1rem 0'
+    margin: '1rem 0 1rem 0',
+    maxWidth: '70%',
   },
   getStartedButton: {
     backgroundColor: '#007FFF',
@@ -46,11 +51,12 @@ export default function Home() {
       <Navbar />
       <Container maxWidth="md">
         <Typography variant="h2" component="h1" className={classes.title}>
-          
+          The <span className={classes.innerTitle}> NFT </span> Exchange for the best <span className={classes.innerTitle}> freekcord </span> moments
         </Typography>
         <Typography variant="h5" className={classes.subTitle}>
+          A sample NFT exchange ran on the etherium blockchain that uses smart contracts to manage backend logic. The exchange is fully decentralized and is open to all users.
         </Typography>
-        <Button variant="contained" className={classes.getStartedButton} endIcon={ <ArrowForwardIosIcon /> }>Get Started</Button>
+        <Button variant="contained" className={classes.getStartedButton} endIcon={ <ArrowForwardIosIcon /> }>View Marketplace</Button>
       </Container>
     </div>
   )

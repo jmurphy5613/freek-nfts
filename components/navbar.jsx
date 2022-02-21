@@ -7,13 +7,24 @@ import Button from '@material-ui/core/Button';
 import { Avatar, Tooltip } from '@mui/material';
 import Box from '@material-ui/core/Box';
 import theme from '../helpers/theme';
+import { borders } from '@mui/system';
 
 
 const useStyles = makeStyles(() => ({
     logo: {
         fontFamily: theme.typography.fontFamily.primary,
         marginLeft: theme.spacing(3)
+    },
+    narbarButtons : {
+        backgroundColor: theme.palette.primary.main,
+        color: '#ffffff',
+        '&:hover': {
+            backgroundColor: '#2a6cad',
+        },
+        border: 'none',
+        textTransform: 'none',
     }
+
 })); 
 
 
@@ -22,21 +33,16 @@ const Navbar = () => {
     const classes = useStyles();
 
     return (
-        <>
+        <div>
             <AppBar position="static">
                 <Toolbar>
 
                     <IconButton edge="start"/>
-                    <Button variant="contained">About</Button>
-                    <Button variant="contained">Dashboard</Button>
-                    <Box>
-                        <Tooltip title="View Profile">
-                            <Avatar src="/favicon.ico"/>
-                        </Tooltip>
-                    </Box>
+                    <Button variant="outlined" className={classes.narbarButtons}>About</Button>
+                    <Button variant="outlined" className={classes.narbarButtons}>Dashboard</Button>
                 </Toolbar>
             </AppBar>
-        </>
+        </div>
     )
 }
 
