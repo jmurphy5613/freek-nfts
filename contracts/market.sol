@@ -79,4 +79,18 @@ contract Market is ReentrancyGuard {
         
         _nftsSold.increment();
     }
+
+    function fetchMarketItemsNotSold () public view returns(MarketItem[] memory) {
+        uint256 numberOfItems = _itemIds.current();
+        uint256 numberOfItemsUnSold = numberOfItems - _nftsSold.current();
+        MarketItem[] memory items = new MarketItem[](numberOfItemsUnSold);
+        uint256 currentIndex = 0;
+        for(uint256 i = 0; i < numberOfItems; i++) {
+            if(_idMarketItems[i+1].owner == address(0)) {
+                items[currentIndex] = _idMarketItems[i+1];
+                currentIndex++;
+            }
+        }
+        return items;
+    }
 }
