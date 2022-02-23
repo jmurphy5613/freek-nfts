@@ -31,7 +31,7 @@ contract Market is ReentrancyGuard {
         uint256 tokenId;
         uint256 price;
         bool isSold;
-        address nftAdress;
+        address nftAddress;
         uint itemId;
     }
 
@@ -44,7 +44,8 @@ contract Market is ReentrancyGuard {
         uint256 tokenId
     ) public payable nonReentrant {
         require(price > 0 ether, "Price must be greater than 0 ether");
-        require(msg.value == price, "Price must be equal to the price");
+        require(tokenId > 0, "TokenId must be greater than 0");
+        require(nftContract != address(0), "NFT contract must be set");
 
         _itemIds.increment();
         uint256 currentItemId = _itemIds.current();
@@ -65,5 +66,17 @@ contract Market is ReentrancyGuard {
         IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
     }
 
-    function createMarketSale()
+    function createMarketSale(
+        uint256 itemId
+    ) public payable nonReentrant {
+        require(msg.value == _idMarketItems[itemId].price, "Price must match");
+        require(!_idMarketItems[itemId].isSold, "Item is already sold");
+        require(msg.sender != address(0), "Buyer must be set");
+
+        _idMarketItems[itemId].owner.transfer(msg.value);
+        _idMarketItems[itemId].owner.transfer(marketFee);
+        IERC721(_idMarketItems[itemId].nftAddress).transferFrom(address(this), msg.sender, _idMarketItems[itemId].tokenId);
+        
+        _nftsSold.increment();
+    }
 }
