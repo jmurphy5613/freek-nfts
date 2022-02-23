@@ -1,96 +1,167 @@
-//SPDX-License-Identifier: MIT
-
+// SPDX-License-Identifier: MIT OR Apache-2.0
 pragma solidity ^0.8.3;
 
-import '@openzeppelin/contracts/utils/Counters.sol';
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+import "hardhat/console.sol";
 
-contract Market is ReentrancyGuard {
-    using Counters for Counters.Counter;
-    //need 2 counters for the amount of tokens and the number that have been sold
-    Counters.Counter private _itemIds;
-    Counters.Counter private _nftsSold;
+contract NFTMarket is ReentrancyGuard {
+  using Counters for Counters.Counter;
+  Counters.Counter private _itemIds;
+  Counters.Counter private _itemsSold;
 
-    //address of the owner of the market
-    address payable private _owner;
+  address payable owner;
+  uint256 listingPrice = 0.025 ether;
 
-    //market fee
-    uint256 private marketFee = 0 ether;
-    //7-8%
+  constructor() {
+    owner = payable(msg.sender);
+  }
 
-    constructor(address payable owner) {
-        _owner = owner;
-    }
+  struct MarketItem {
+    uint itemId;
+    address nftContract;
+    uint256 tokenId;
+    address payable seller;
+    address payable owner;
+    uint256 price;
+    bool sold;
+  }
 
-    //struct for the market item
-    struct MarketItem {
-        address payable owner;
-        address payable buyer;
-        uint256 tokenId;
-        uint256 price;
-        bool isSold;
-        address nftAddress;
-        uint itemId;
-    }
+  mapping(uint256 => MarketItem) private idToMarketItem;
 
-    //map of market items
-    mapping(uint256 => MarketItem) private _idMarketItems;
+  event MarketItemCreated (
+    uint indexed itemId,
+    address indexed nftContract,
+    uint256 indexed tokenId,
+    address seller,
+    address owner,
+    uint256 price,
+    bool sold
+  );
 
-    function createMarketItem (
-        address nftContract,
-        uint256 price,
-        uint256 tokenId
+  /* Returns the listing price of the contract */
+  function getListingPrice() public view returns (uint256) {
+    return listingPrice;
+  }
+  
+  /* Places an item for sale on the marketplace */
+  function createMarketItem(
+    address nftContract,
+    uint256 tokenId,
+    uint256 price
+  ) public payable nonReentrant {
+    require(price > 0, "Price must be at least 1 wei");
+    require(msg.value == listingPrice, "Price must be equal to listing price");
+
+    _itemIds.increment();
+    uint256 itemId = _itemIds.current();
+  
+    idToMarketItem[itemId] =  MarketItem(
+      itemId,
+      nftContract,
+      tokenId,
+      payable(msg.sender),
+      payable(address(0)),
+      price,
+      false
+    );
+
+    IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+
+    emit MarketItemCreated(
+      itemId,
+      nftContract,
+      tokenId,
+      msg.sender,
+      address(0),
+      price,
+      false
+    );
+  }
+
+  /* Creates the sale of a marketplace item */
+  /* Transfers ownership of the item, as well as funds between parties */
+  function createMarketSale(
+    address nftContract,
+    uint256 itemId
     ) public payable nonReentrant {
-        require(price > 0 ether, "Price must be greater than 0 ether");
-        require(tokenId > 0, "TokenId must be greater than 0");
-        require(nftContract != address(0), "NFT contract must be set");
+    uint price = idToMarketItem[itemId].price;
+    uint tokenId = idToMarketItem[itemId].tokenId;
+    require(msg.value == price, "Please submit the asking price in order to complete the purchase");
 
-        _itemIds.increment();
-        uint256 currentItemId = _itemIds.current();
+    idToMarketItem[itemId].seller.transfer(msg.value);
+    IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
+    idToMarketItem[itemId].owner = payable(msg.sender);
+    idToMarketItem[itemId].sold = true;
+    _itemsSold.increment();
+    payable(owner).transfer(listingPrice);
+  }
 
+  /* Returns all unsold market items */
+  function fetchMarketItems() public view returns (MarketItem[] memory) {
+    uint itemCount = _itemIds.current();
+    uint unsoldItemCount = _itemIds.current() - _itemsSold.current();
+    uint currentIndex = 0;
 
-        //map the item
-        _idMarketItems[currentItemId] = MarketItem(
-            payable (msg.sender),
-            payable (address(0)),
-            tokenId,
-            price,
-            false,
-            nftContract,
-            currentItemId
-        );
+    MarketItem[] memory items = new MarketItem[](unsoldItemCount);
+    for (uint i = 0; i < itemCount; i++) {
+      if (idToMarketItem[i + 1].owner == address(0)) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idToMarketItem[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
+    }
+    return items;
+  }
 
-        //transfer ownership of the token to the market
-        IERC721(nftContract).transferFrom(msg.sender, address(this), tokenId);
+  /* Returns onlyl items that a user has purchased */
+  function fetchMyNFTs() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _itemIds.current();
+    uint itemCount = 0;
+    uint currentIndex = 0;
+
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].owner == msg.sender) {
+        itemCount += 1;
+      }
     }
 
-    function createMarketSale(
-        uint256 itemId
-    ) public payable nonReentrant {
-        require(msg.value == _idMarketItems[itemId].price, "Price must match");
-        require(!_idMarketItems[itemId].isSold, "Item is already sold");
-        require(msg.sender != address(0), "Buyer must be set");
+    MarketItem[] memory items = new MarketItem[](itemCount);
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].owner == msg.sender) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idToMarketItem[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
+    }
+    return items;
+  }
 
-        _idMarketItems[itemId].owner.transfer(msg.value);
-        _idMarketItems[itemId].owner.transfer(marketFee);
-        IERC721(_idMarketItems[itemId].nftAddress).transferFrom(address(this), msg.sender, _idMarketItems[itemId].tokenId);
-        
-        _nftsSold.increment();
+  /* Returns only items a user has created */
+  function fetchItemsCreated() public view returns (MarketItem[] memory) {
+    uint totalItemCount = _itemIds.current();
+    uint itemCount = 0;
+    uint currentIndex = 0;
+
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].seller == msg.sender) {
+        itemCount += 1;
+      }
     }
 
-    function fetchMarketItemsNotSold () public view returns(MarketItem[] memory) {
-        uint256 numberOfItems = _itemIds.current();
-        uint256 numberOfItemsUnSold = numberOfItems - _nftsSold.current();
-        MarketItem[] memory items = new MarketItem[](numberOfItemsUnSold);
-        uint256 currentIndex = 0;
-        for(uint256 i = 0; i < numberOfItems; i++) {
-            if(_idMarketItems[i+1].owner == address(0)) {
-                items[currentIndex] = _idMarketItems[i+1];
-                currentIndex++;
-            }
-        }
-        return items;
+    MarketItem[] memory items = new MarketItem[](itemCount);
+    for (uint i = 0; i < totalItemCount; i++) {
+      if (idToMarketItem[i + 1].seller == msg.sender) {
+        uint currentId = i + 1;
+        MarketItem storage currentItem = idToMarketItem[currentId];
+        items[currentIndex] = currentItem;
+        currentIndex += 1;
+      }
     }
+    return items;
+  }
 }
