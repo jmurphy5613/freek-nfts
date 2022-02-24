@@ -5,10 +5,9 @@ import { ethers } from 'ethers';
 import { useState, useEffect } from 'react';
 import { Web3Modal } from 'web3modal';
 import { nftaddress, nftmarketaddress } from '../config';
-import NFT from '../artifacts/contracts/NFT.json';
-import NFTMarket from '../artifacts/contracts/NFTMarket.json';
+import NFT from '../artifacts/contracts/nft.sol/NFT.json';
+import NFTMarket from '../artifacts/contracts/market.sol/NFTMarket.json';
 import axios from 'axios';
-import transitions from '@material-ui/core/styles/transitions';
 
 const useStyles = makeStyles({
     root: {
@@ -73,10 +72,22 @@ const Marketplace = () => {
     }
 
 
+    if(loadingState === 'loading') {
+        return (
+            <div className={classes.root}>
+                <Navbar />
+                <div style={{textAlign: 'center', paddingTop: '50px'}}>
+                    <h1>Sold out!</h1>
+                </div>
+            </div>
+        )
+    }
+
     return (
 
         <div className={classes.root}>
             <Navbar />
+            {console.log(nfts)}
         </div>
     )
 }
