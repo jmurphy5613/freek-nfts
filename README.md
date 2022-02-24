@@ -13,7 +13,9 @@ This contract manages the minting and distribution of each NFT.
 # market.sol
 This contract manages the selling of each NFT and creates functions that can give the blockchain data to the frontend.
 
-- 
+- Each market item is mapped to a state that is maintained within this smart contract it follows the following structure:
+
+`MarketItem : { uint itemId, address nftContract, uint tokenId, address payable owner, address payable original owner, uint price, bool isBeingSold }`
 
 
 
