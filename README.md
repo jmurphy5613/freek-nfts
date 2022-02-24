@@ -17,6 +17,9 @@ This contract manages the selling of each NFT and creates functions that can giv
 
 `MarketItem : { uint itemId, address nftContract, uint tokenId, address payable owner, address payable original owner, uint price, bool isBeingSold }`
 
+- The original creator is the address of the orginal sellers of the NFT
+
+
 
 
 

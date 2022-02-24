@@ -1,4 +1,4 @@
-import { makeStyles, Button, Container, Typography } from '@material-ui/core';
+import { makeStyles, Button, Container, Typography, Link } from '@material-ui/core';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import Navbar from '../components/navbar';
 
@@ -56,7 +56,10 @@ export default function Home() {
         <Typography variant="h5" className={classes.subTitle}>
           A sample NFT exchange ran on the etherium blockchain that uses smart contracts to manage backend logic. The exchange is fully decentralized and is open to all users.
         </Typography>
-        <Button variant="contained" className={classes.getStartedButton} endIcon={ <ArrowForwardIosIcon /> }>View Marketplace</Button>
+        <Link href="/marketplace">
+          <Button variant="contained" className={classes.getStartedButton} endIcon={ <ArrowForwardIosIcon /> }>View Marketplace</Button>
+        </Link>
+        
       </Container>
     </div>
   )
