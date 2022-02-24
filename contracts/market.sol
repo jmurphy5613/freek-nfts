@@ -13,7 +13,7 @@ contract NFTMarket is ReentrancyGuard {
   Counters.Counter private _itemsSold;
 
   address payable originalCreator;
-  uint256 listingPrice = 0.025 ether;
+  uint256 creatorFee = 0.025 ether;
 
   constructor() {
     originalCreator = payable(msg.sender);
@@ -45,7 +45,7 @@ contract NFTMarket is ReentrancyGuard {
 
   /* Returns the listing price of the contract */
   function getListingPrice() public view returns (uint256) {
-    return listingPrice;
+    return creatorFee;
   }
   
   /* Places an item for sale on the marketplace */
@@ -55,7 +55,7 @@ contract NFTMarket is ReentrancyGuard {
     uint256 price
   ) public payable nonReentrant {
     require(price > 0, "Price must be at least 1 wei");
-    require(msg.value == listingPrice, "Price must be equal to listing price");
+    require(msg.value == creatorFee, "Price must be equal to listing price");
 
     _itemIds.increment();
     uint256 itemId = _itemIds.current();
@@ -97,7 +97,7 @@ contract NFTMarket is ReentrancyGuard {
     IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
     idToMarketItem[itemId].isBeingSold = false;
     _itemsSold.increment();
-    payable(originalCreator).transfer(listingPrice);
+    payable(originalCreator).transfer(creatorFee);
   }
 
   /* Returns all unsold market items */
