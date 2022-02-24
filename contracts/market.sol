@@ -12,13 +12,15 @@ contract NFTMarket is ReentrancyGuard {
   Counters.Counter private _itemIds;
   Counters.Counter private _itemsSold;
 
-  address payable owner;
+  address payable originalCreator;
   uint256 listingPrice = 0.025 ether;
 
   constructor() {
-    owner = payable(msg.sender);
+    originalCreator = payable(msg.sender);
   }
 
+
+//is being sold tracks if we need to 
   struct MarketItem {
     uint itemId;
     address nftContract;
@@ -27,6 +29,7 @@ contract NFTMarket is ReentrancyGuard {
     address payable owner;
     uint256 price;
     bool sold;
+    bool isBeingSold;
   }
 
   mapping(uint256 => MarketItem) private idToMarketItem;
@@ -36,7 +39,6 @@ contract NFTMarket is ReentrancyGuard {
     address indexed nftContract,
     uint256 indexed tokenId,
     address seller,
-    address owner,
     uint256 price,
     bool sold
   );
@@ -75,7 +77,6 @@ contract NFTMarket is ReentrancyGuard {
       nftContract,
       tokenId,
       msg.sender,
-      address(0),
       price,
       false
     );
@@ -93,10 +94,9 @@ contract NFTMarket is ReentrancyGuard {
 
     idToMarketItem[itemId].seller.transfer(msg.value);
     IERC721(nftContract).transferFrom(address(this), msg.sender, tokenId);
-    idToMarketItem[itemId].owner = payable(msg.sender);
     idToMarketItem[itemId].sold = true;
     _itemsSold.increment();
-    payable(owner).transfer(listingPrice);
+    payable(originalCreator).transfer(listingPrice);
   }
 
   /* Returns all unsold market items */
