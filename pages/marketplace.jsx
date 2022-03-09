@@ -72,7 +72,7 @@ const Marketplace = () => {
     }
 
 
-    if(loadingState === 'loading') {
+    if(nfts.length === 0) {
         return (
             <div className={classes.root}>
                 <Navbar />
