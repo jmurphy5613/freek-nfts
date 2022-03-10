@@ -40,6 +40,9 @@ const Navbar = () => {
                     <IconButton edge="start"/>
                     <Button variant="outlined" className={classes.narbarButtons}>About</Button>
                     <Button variant="outlined" className={classes.narbarButtons}>Dashboard</Button>
+                    <a href="/create-item">
+                        <Button variant="outlined" className={classes.narbarButtons}>Create Item</Button>
+                    </a>
                 </Toolbar>
             </AppBar>
         </div>
