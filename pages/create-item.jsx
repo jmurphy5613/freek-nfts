@@ -11,7 +11,7 @@ import Container from '@material-ui/core/Container';
 
 import Navbar from '../components/navbar';
 
-// const client = ipfsHttpClient('');
+const client = ipfsHttpClient('');
 
 import { nftaddress, nftmarketaddress } from "../config";
 
@@ -48,8 +48,43 @@ const CreateItem = () => {
     const [formInput, setFormInput] = useState({ name: "", description: "", price: "" });
     const router = useRouter();
 
+    async function onChange(e) {
+        const file = e.target.files[0];
 
+        try {
+            const added = await client.add(file);
+            const url = 'https://ipfs.infura.io/ipfs/' + added.path;
+            setFileUrl(url);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
+    async function createItem() {
+        const { name, description, price } = formInput;
+        if(!name || !description || !price) {
+            return;
+        }
+        const data = JSON.stringify({ name, description, image: fileUrl });
+        try {
+            const added = await client.add(data);
+            const url = 'https://ipfs.infura.io/ipfs/' + added.path;
+            createSale(url);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function createSale(url) {
+        const web3Modal = new Web3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
+        const signer = provider.getSigner();
+
+        let contract = new ethers.Contract(nftaddress, NFTMarket.abi, signer);
+        let transaction = await contract.createToken(url);
+        let receipt = await transaction.wait();
+    }
     return (
             <div className={classes.root}>
                 <Navbar />
@@ -64,6 +99,7 @@ const CreateItem = () => {
             </div>
 
     )
+    
 }
 
 export default CreateItem;
