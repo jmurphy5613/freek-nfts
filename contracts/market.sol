@@ -31,6 +31,39 @@ contract NFTMarket is ReentrancyGuard {
 
   mapping(uint => Item) public items;
 
+
+  function createMarketItem(IERC721 _nft, uint _tokenId, uint _price) external nonReentrant {
+    require(msg.sender == feeAcount, "Only the fee account can create a new item");
+    require(_price > 0, "Price must be greater than 0");
+    require(_nft.ownerOf(_tokenId) == msg.sender, "You must own the token to create a new item");
+    require(!items[_tokenId].isSold, "Item is already sold");
+
+    items[itemCounter] = Item (
+      _nft,
+      msg.sender,
+      _price,
+      _tokenId,
+      false
+    );
+
+  }
+
+  function purchaceItem(uint _itemId) external payable nonReentrant {
+    require(msg.sender != feeAcount, "You can't buy your own item");
+    require(msg.value >= items[_itemId].price, "You don't have enough money");
+    require(!items[_itemId].isSold, "Item is already sold");
+
+    items[_itemId].owner = msg.sender;
+    items[_itemId].isSold = true;
+    items[_itemId].nft.transferFrom(msg.sender, feeAcount, _itemId);
+    feeAcount.transfer(getTruePrice(_itemId - items[_itemId].price));
+
+
+    ownerCounter.increment();
+  }
+
+
+
   //getters and setters
   function getItem(uint _tokenId) public view returns (Item) {
     return items[_tokenId];
@@ -67,5 +100,11 @@ contract NFTMarket is ReentrancyGuard {
   function getFeeAccount() public view returns (address) {
     return feeAcount;
   }
+
+  function getTruePrice(uint _tokenId) public view returns (uint) {
+    return ((items[_tokenId].price)*(100+fee)/100);
+  }
+
+  
 
 }
