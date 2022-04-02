@@ -9,8 +9,7 @@ import "hardhat/console.sol";
 
 contract NFTMarket is ReentrancyGuard {
   using Counters for Counters.Counter;
-  Counters.Counter public itemCounter = Counters.Counter(0);
-  Counters.Counter public ownerCounter = Counters.Counter(0);
+  uint public itemCounter = 0;
 
   address payable public feeAcount;
   uint public immutable fee;
@@ -40,11 +39,13 @@ contract NFTMarket is ReentrancyGuard {
 
     items[itemCounter] = Item (
       _nft,
-      msg.sender,
+      payable(msg.sender),
       _price,
       _tokenId,
       false
     );
+
+    itemCounter++;
 
   }
 
@@ -53,19 +54,16 @@ contract NFTMarket is ReentrancyGuard {
     require(msg.value >= items[_itemId].price, "You don't have enough money");
     require(!items[_itemId].isSold, "Item is already sold");
 
-    items[_itemId].owner = msg.sender;
+    items[_itemId].owner = payable(msg.sender);
     items[_itemId].isSold = true;
     items[_itemId].nft.transferFrom(msg.sender, feeAcount, _itemId);
     feeAcount.transfer(getTruePrice(_itemId - items[_itemId].price));
-
-
-    ownerCounter.increment();
   }
 
 
 
   //getters and setters
-  function getItem(uint _tokenId) public view returns (Item) {
+  function getItem(uint _tokenId) public view returns (Item memory) {
     return items[_tokenId];
   }
 
@@ -86,11 +84,7 @@ contract NFTMarket is ReentrancyGuard {
   }
 
   function getItemCount() public view returns (uint) {
-    return itemCounter.get();
-  }
-
-  function getOwnerCount() public view returns (uint) {
-    return ownerCounter.get();
+    return itemCounter;
   }
 
   function getFee() public view returns (uint) {
@@ -105,6 +99,14 @@ contract NFTMarket is ReentrancyGuard {
     return ((items[_tokenId].price)*(100+fee)/100);
   }
 
-  
+  function getNumberOfOwners() public view returns (uint) {
+    uint count = 0;
+    for (uint i = 0; i < itemCounter; i++) {
+      if (items[i].owner == msg.sender) {
+        count++;
+      }
+    }
+    return count;
+  }
 
 }
